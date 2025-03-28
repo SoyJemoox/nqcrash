@@ -4,7 +4,6 @@ import datetime
 import locale
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackContext
-from PIL import Image, ImageDraw, ImageFont  # Para generar el recibo en imagen
 
 # Configuración del logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -13,16 +12,11 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 ESPERANDO_NOMBRE, ESPERANDO_CUENTA, ESPERANDO_MONTO = range(3)
 
 # Token del bot de Telegram
-TOKEN = "TU_TOKEN_AQUI"
+TOKEN = "7580157690:AAGlbMF78J1_Y-TWbDizeCMaGT6FAxcwNVE"
 
-# Configuración de localización para que los meses estén en español
-try:
-    locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")  # Linux/Mac
-except:
-    try:
-        locale.setlocale(locale.LC_TIME, "es-CO")  # Windows
-    except:
-        pass  # Si no funciona, seguirá con la configuración predeterminada
+# Configuración de localización para formato de fecha en español
+locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")  # Para Linux/Mac
+# locale.setlocale(locale.LC_TIME, "es-CO")  # En Windows puede ser necesario usar esta opción
 
 # Variable para controlar si el usuario está ingresando datos
 ingresando_datos = False
@@ -31,30 +25,6 @@ ingresando_datos = False
 def generar_referencia():
     numero = random.randint(100000, 99999999)  # Genera un número aleatorio de 6 a 8 dígitos
     return f"M{numero}"
-
-# Función para generar la imagen del recibo
-def generar_imagen_recibo(datos):
-    # Cargar la imagen base
-    imagen_base = Image.open("recibo_base.png")  # Imagen de fondo del recibo
-    draw = ImageDraw.Draw(imagen_base)
-
-    # Cargar una fuente (usa una fuente TrueType, por ejemplo "arial.ttf")
-    try:
-        fuente = ImageFont.truetype("arial.ttf", 30)  # Ajusta el tamaño según necesites
-    except:
-        fuente = ImageFont.load_default()  # Usa una fuente predeterminada si no encuentra la fuente TTF
-
-    # Coordenadas para escribir los datos en la imagen
-    draw.text((100, 100), f"Nombre: {datos['nombre']}", fill="black", font=fuente)
-    draw.text((100, 150), f"Cuenta: {datos['cuenta']}", fill="black", font=fuente)
-    draw.text((100, 200), f"Monto: {datos['monto']}", fill="black", font=fuente)
-    draw.text((100, 250), f"Fecha: {datos['hora']}", fill="black", font=fuente)
-    draw.text((100, 300), f"Referencia: {datos['referencia']}", fill="black", font=fuente)
-
-    # Guardar la imagen generada
-    nombre_imagen = "recibo_generado.png"
-    imagen_base.save(nombre_imagen)
-    return nombre_imagen
 
 # Función que inicia el bot
 async def start(update: Update, context: CallbackContext) -> None:
@@ -104,12 +74,13 @@ async def recibir_monto(update: Update, context: CallbackContext) -> int:
         await update.message.reply_text("⚠️ El monto debe ser un número válido.")
         return ESPERANDO_MONTO
 
-    # Formatear monto con puntos de mil y sin espacio entre "$" y el número
+    # Dar formato de moneda con puntos de mil
     monto_formateado = f"${int(monto):,}".replace(",", ".")
 
     # Obtener fecha y hora en formato solicitado
     fecha_actual = datetime.datetime.now()
-    fecha_formateada = fecha_actual.strftime("%d de %B de %Y a las %I:%M %p")
+    fecha_formateada = fecha_actual.strftime("%d de %B de %Y a las %I:%M %p").lower()
+     # Corregir "AM" y "PM" a "a. m." y "p. m."
     fecha_formateada = fecha_formateada.replace("AM", "a. m.").replace("PM", "p. m.")
 
     referencia = generar_referencia()
@@ -122,12 +93,16 @@ async def recibir_monto(update: Update, context: CallbackContext) -> int:
         "referencia": referencia
     }
 
-    # Generar la imagen con los datos
-    nombre_imagen = generar_imagen_recibo(datos)
-
-    # Enviar imagen del recibo
-    with open(nombre_imagen, "rb") as imagen:
-        await update.message.reply_photo(photo=imagen, caption="📄 Recibo generado correctamente.")
+    # Enviar mensaje con la información
+    await update.message.reply_text(
+        f"📄 *Recibo generado con éxito!*\n\n"
+        f"👤 *Nombre:* {datos['nombre']}\n"
+        f"🏦 *Cuenta:* {datos['cuenta']}\n"
+        f"💰 *Monto:* {datos['monto']}\n"
+        f"🕒 *Fecha:* {datos['hora']}\n"
+        f"🔢 *Referencia:* {datos['referencia']}",
+        parse_mode="Markdown"
+    )
 
     ingresando_datos = False  # Restablecer estado
 
@@ -149,6 +124,7 @@ async def cancelar(update: Update, context: CallbackContext) -> int:
 def main():
     app = Application.builder().token(TOKEN).build()
 
+    # Manejador de conversación
     conv_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex("^(Generar Recibo)$"), generar_recibo)],
         states={
