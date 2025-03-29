@@ -3,6 +3,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from telegram.error import TelegramError
 from PIL import Image, ImageDraw, ImageFont
 import random
+import os
 import locale
 from datetime import datetime
 import re
@@ -11,11 +12,11 @@ import re
 locale.setlocale(locale.LC_TIME, 'es_CO.UTF-8')
 
 # Token de Telegram
-TOKEN = "7580157690:AAGxiHxtjeN8h6DQL4ajfnXFWkXTMgTPrag"
-# Nombre del canal público
-CANAL_PRINCIPAL = "@nqcash"
-# Enlace de invitación al canal público
-ENLACE_INVITACION = "https://t.me/NqCash"
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+# Nombre del canal público desde variable de entorno
+CANAL_PRINCIPAL = os.getenv("CANAL_PRINCIPAL")
+# Enlace de invitación al canal público (puedes dejarlo hardcoded o también usar una variable)
+ENLACE_INVITACION = os.getenv("ENLACE_INVITACION", "https://t.me/nqcash")
 
 # Horario de funcionamiento (en formato 24 horas)
 HORA_INICIO = 0  # 12:00 AM
