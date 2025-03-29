@@ -13,7 +13,7 @@ pefile==2023.2.7
 pillow==11.0.0
 pyinstaller==6.11.1
 pyinstaller-hooks-contrib==2024.11
-python-telegram-bot==22.0
+python-telegram-bot==20.8
 pywin32-ctypes==0.2.3
 requests==2.32.3
 setuptools==75.6.0
